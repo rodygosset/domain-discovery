@@ -5,6 +5,7 @@ The user never hears a DDD term. You hold the concept and ask the plain question
 ## Contents
 - Concept to question
 - How to ask
+- Greenfield mode
 - When the user is unsure
 - Traps
 
@@ -39,6 +40,14 @@ The user never hears a DDD term. You hold the concept and ask the plain question
 - Ask "why" up to three times when a rule looks arbitrary. It may be a real constraint or a leftover from an old system.
 - Repeat the user's exact words back and use them in the model.
 - Update `domain-model.json` after each answer. Quote the answer in `evidence`.
+
+## Greenfield mode
+
+There is no code to check answers against, so the stories carry the whole model.
+
+- Ask for more stories than in refactor mode, and for the hardest cases the user expects.
+- Ask "How do you do this today, without the software?" Spreadsheets, emails and paper forms show the real steps and words.
+- When two answers contradict each other, record a tension and ask which one holds.
 
 ## When the user is unsure
 

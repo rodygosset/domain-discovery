@@ -1,6 +1,6 @@
 # Reading the code
 
-Turn an Effect v4 codebase into a first draft of the model. Every entry starts as `"status": "hypothesis"` with the file and line as evidence.
+Turn an Effect v4 codebase into a first draft of the model. Refactor mode only. Every entry starts as `"status": "hypothesis"` with the file and line as evidence.
 
 ## Contents
 - Order of reading
@@ -11,7 +11,7 @@ Turn an Effect v4 codebase into a first draft of the model. Every entry starts a
 
 ## Order of reading
 
-1. `package.json`: record the Effect version, the package manager and the commands that build and test. These become `repo.checks`.
+1. `package.json`: record the Effect version, the package manager, the storage package such as `@effect/sql-pg` in `repo.storage`, and the commands that build and test in `repo.checks`.
 2. The edges: `HttpApi` groups, `RpcGroup` definitions, CLI commands, queue consumers. Each operation that changes something is a candidate command. Each read is a candidate query.
 3. The `Context.Service` classes and their `Layer` graph. Note what each service depends on.
 4. The schemas: `Schema.Class`, `Schema.Struct`, `Schema.TaggedError`, and the SQL tables and migrations.

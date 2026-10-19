@@ -14,7 +14,10 @@ Read this file when `repo.frontend.kind` is not `none`.
 
 ## Transports
 
-`repo.frontend.transport` says how the frontend reaches the domain. Keep the transport the code uses today. Changing it is a behavior change and needs a resolved tension.
+`repo.frontend.transport` says how the frontend reaches the domain.
+
+- Refactor mode: keep the transport the code uses today. Changing it is a behavior change and needs a resolved tension.
+- Greenfield mode: ask the user. Suggest `rpc` when only this frontend calls the server, `http-api` when other clients need a public HTTP API, and `local` when the data should live on the user's device.
 
 | Transport | The frontend calls | The frontend imports |
 |---|---|---|
@@ -144,6 +147,8 @@ Set `repo.frontend.kind` to `other`. The plan moves each call to the domain behi
 ## Frontend steps
 
 Add these steps after the contracts exist. Each step names the command and query ids whose callers it moves in `refs`.
+
+In greenfield mode there is nothing to move. Build each screen on its client service from the start, using steps 1 and 5 only.
 
 1. Add one client service per context for the transport. With transport `local`, add `browser.ts` and the browser repositories instead.
 2. Move the screens of one context at a time onto its client service. For Foldkit, replace each direct call in a Command. For TanStack Start, replace each server function, loader call or `fetch` with a query or mutation atom.

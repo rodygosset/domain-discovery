@@ -357,6 +357,7 @@ files.set("architecture.md", doc(
   transportFiles ? `${`  ${transportFiles.handlers.split("/")[1]}`.padEnd(29)}server handlers for the transport` : undefined,
   "```",
   "",
+  model.repo.storage && model.repo.storage !== "none" ? `Repositories store data with \`${model.repo.storage}\`.\n` : undefined,
   "## Import rules",
   "",
   "- `domain/` imports only `effect` and other files in `domain/`.",

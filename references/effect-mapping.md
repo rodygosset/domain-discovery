@@ -192,7 +192,7 @@ export class ListDraftOrders extends Schema.TaggedClass<ListDraftOrders>()("List
 export const DraftOrders = Schema.Array(DraftOrder)
 ```
 
-The transport the model names in `repo.frontend.transport` decides what comes next. Keep the transport the code uses today. Changing it is a behavior change and needs a resolved tension.
+The transport the model names in `repo.frontend.transport` decides what comes next. In refactor mode, keep the transport the code uses today. Changing it is a behavior change and needs a resolved tension.
 
 Transport `rpc`, in `contract/Rpc.ts`:
 
@@ -233,13 +233,15 @@ export const OrderingRpcHandlers = OrderingRpcs.toLayer(
 )
 ```
 
-Infrastructure failures stay out of domain signatures. Convert them with `Effect.orDie`, unless the current code recovers from them. In that case add one `<Context>StorageError` to `domain/errors.ts` and record it in `errors`.
+Infrastructure failures stay out of domain signatures. Convert them with `Effect.orDie`, unless the current code or a confirmed story recovers from them. In that case add one `<Context>StorageError` to `domain/errors.ts` and record it in `errors`.
 
 Tests use `@effect/vitest`. Aggregate tests call decide functions with a state and assert the events or the error. Command service tests provide `layerTest`. Name each test after the rule it proves, in glossary terms: `"rejects placing an order twice"`.
 
 ## Step order
 
-Plan the steps in this order. Split a step per aggregate or per context when it would touch more than about 15 files.
+Plan the steps in the order for `repo.mode`. Split a step per aggregate or per context when it would touch more than about 15 files.
+
+### Refactor
 
 1. Create the context folders and value objects. Point existing code at the new types.
 2. Add domain errors.
@@ -253,7 +255,27 @@ Plan the steps in this order. Split a step per aggregate or per context when it 
 10. If `repo.frontend.kind` is not `none`, move the frontend onto the contracts. [frontend.md](frontend.md) gives the steps.
 11. Rename what is left to the glossary terms in each `retire` list.
 12. Build the application layer from each context's `layer`. Delete dead modules and endpoints that nothing calls.
-13. Check `docs/domain` against the code: every folder and file it names exists, and every name matches. Fix the docs where they differ. Add one line to `AGENTS.md` or `CLAUDE.md`: "Domain docs are in docs/domain/README.md." Delete `domain-model.json`. From here on, the docs are the record of the domain.
+13. Finish the docs. See "Last step" below.
+
+### Greenfield
+
+1. Set up the project: `package.json` with `effect`, `@effect/vitest`, `vitest`, `typescript` and the `repo.storage` package, a `tsconfig.json`, and the scripts that `repo.checks` runs. Skip what already exists.
+2. Create the context folders and value objects, with a test for each rule.
+3. Add domain errors.
+4. Add each aggregate module with its tests.
+5. Add the repository interfaces, the storage layers on `repo.storage` with their migrations, and the memory layers.
+6. Add each command service, with tests on its `layerTest`.
+7. Add the event buses and policies.
+8. Add the query services.
+9. Add ports and adapters for external systems, and the translation for each `acl` relation.
+10. Add each context's `contract/index.ts` and the transport files that `repo.frontend.transport` calls for.
+11. If `repo.frontend.kind` is not `none`, build the frontend on the contracts. [frontend.md](frontend.md) gives the layout.
+12. Build the application layer from each context's `layer`, and the entry point that serves it, such as `Layer.launch` with `NodeRuntime.runMain`.
+13. Finish the docs. See "Last step" below.
+
+### Last step
+
+Check `docs/domain` against the code: every folder and file it names exists, and every name matches. Fix the docs where they differ. Add one line to `AGENTS.md` or `CLAUDE.md`: "Domain docs are in docs/domain/README.md." Delete `domain-model.json`. From here on, the docs are the record of the domain.
 
 ## Rules for every step
 
@@ -261,4 +283,5 @@ Plan the steps in this order. Split a step per aggregate or per context when it 
 - Use glossary terms for every name the step creates.
 - Never import from another context's `domain/`, `application/` or `infrastructure/`. Import its `index.ts`, or from browser code its `contract/` or `browser.ts`.
 - Files in `domain/` import only `effect` and other files in `domain/`. Files in `contract/` import only `effect`, `effect/rpc`, `effect/http-api` and `domain/`. This keeps `contract/` safe for the browser.
-- Keep behavior unchanged. A behavior change needs a tension with a resolution in the model.
+- Refactor: keep behavior unchanged. A behavior change needs a tension with a resolution in the model.
+- Greenfield: build only what the model holds. Anything else needs a model change first.

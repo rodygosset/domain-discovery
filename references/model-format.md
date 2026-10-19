@@ -32,7 +32,9 @@ The example is an online shop, trimmed. Ids such as `ctx.shipping` and `cmd.prep
 {
   "version": 1,
   "repo": {
+    "mode": "refactor",
     "effectVersion": "4.0.5",
+    "storage": "@effect/sql-pg",
     "packageManager": "pnpm",
     "checks": ["pnpm tsc --noEmit", "pnpm vitest run"],
     "frontend": { "kind": "tanstack-start-atom", "path": "src/routes", "transport": "http-api" }
@@ -153,6 +155,9 @@ The example is an online shop, trimmed. Ids such as `ctx.shipping` and `cmd.prep
 
 ## Section rules
 
+- `repo.mode`: `refactor` or `greenfield`.
+- `repo.storage`: the package the repositories store data with, such as `@effect/sql-pg`, `@effect/sql-sqlite-node` or `@effect/platform-browser` for IndexedDB. `none` when nothing is stored.
+- Greenfield mode: evidence is only `user:` and `decided:` entries, `replaces` lists are empty, and `persistence.current` is `"none"`.
 - `repo.frontend.kind`: `none`, `foldkit`, `tanstack-start-atom` or `other`. `path` is the frontend folder. `transport`: `rpc`, `http-api`, `server-fn`, `local` or `other`, the way the frontend reaches the domain today. Both are omitted for `none`.
 - `glossary`: one entry per domain term. `retire` lists the code names that the refactor renames to `term`.
 - `subdomains.kind`: `core` (what sets the business apart), `supporting` (needed, specific to them) or `generic` (anyone's version would do).

@@ -76,6 +76,10 @@ if (errors.length > 0) report()
 if (!Array.isArray(model.repo.checks) || model.repo.checks.length === 0) {
   fail("repo.checks", "list at least one build or test command")
 }
+if (!["refactor", "greenfield"].includes(model.repo.mode)) fail("repo.mode", `must be "refactor" or "greenfield"`)
+if (typeof model.repo.storage !== "string" || model.repo.storage.length === 0) {
+  fail("repo.storage", `name the storage package, or "none"`)
+}
 const frontendKinds = ["none", "foldkit", "tanstack-start-atom", "other"]
 const frontend = model.repo.frontend
 if (!frontend || !frontendKinds.includes(frontend.kind)) {
@@ -224,6 +228,17 @@ if (!model.stories.some((story) => story.kind === "main")) fail("stories", "need
 if (!model.stories.some((story) => story.kind === "case")) fail("stories", "needs at least one real case")
 if (model.openQuestions.length > 0) {
   fail("openQuestions", `${model.openQuestions.length} question(s) still open`)
+}
+
+if (model.repo.mode === "greenfield") {
+  for (const section of Object.keys(sections)) {
+    for (const element of model[section]) {
+      if (element.replaces?.length) fail(`${section}.${element.id}`, "greenfield mode has nothing to replace")
+    }
+  }
+  for (const step of model.plan.steps ?? []) {
+    if (step.move?.length) fail(`plan.${step.id}`, "greenfield mode has nothing to move")
+  }
 }
 
 // Code evidence must point at real files
