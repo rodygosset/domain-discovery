@@ -16,6 +16,17 @@ Read an Effect v4 codebase, interview the user, and write `domain-model.json` at
 - Ask one question per message.
 - Map every planned change to an Effect v4 construct from [references/effect-mapping.md](references/effect-mapping.md). For a Foldkit or TanStack Start frontend, also follow [references/frontend.md](references/frontend.md).
 
+## Writing
+
+These rules cover every text you produce: messages to the user, questions, summaries, every file you write, and the text fields of `domain-model.json`.
+
+- Before writing anything, load pstack's `unslop`, `technical-writing` and `bro` skills. If they are not installed, read them from `https://raw.githubusercontent.com/cursor/plugins/main/pstack/skills/<name>/SKILL.md`.
+- Apply `unslop` and `technical-writing` to every text before you send or save it.
+- Apply `bro` to every message to the user: say it the way one person talks to another, with no jargon.
+- Keep it short. One idea per sentence. Plain, everyday words.
+- Cut what does no work: filler, recaps, preambles, hedging, compliments, closing offers.
+- Make it easy to scan. Lead with the point. Use short lists and tables when they make it faster to read.
+
 ## Workflow
 
 Copy this checklist and tick it off as you go.
