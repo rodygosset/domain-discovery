@@ -35,6 +35,7 @@ The example is an online shop, trimmed. Ids such as `ctx.shipping` and `cmd.prep
     "mode": "refactor",
     "effectVersion": "4.0.5",
     "storage": "@effect/sql-pg",
+    "layout": { "contextRoot": "src/<context>" },
     "packageManager": "pnpm",
     "checks": ["pnpm tsc --noEmit", "pnpm vitest run"],
     "frontend": { "kind": "tanstack-start-atom", "path": "src/routes", "transport": "http-api" }
@@ -156,6 +157,7 @@ The example is an online shop, trimmed. Ids such as `ctx.shipping` and `cmd.prep
 ## Section rules
 
 - `repo.mode`: `refactor` or `greenfield`.
+- `repo.layout.contextRoot`: where each context lives, with `<context>` standing for its folder name, such as `src/<context>` or `packages/<context>/src`. Every `contexts.module` follows it.
 - `repo.storage`: the package the repositories store data with, such as `@effect/sql-pg`, `@effect/sql-sqlite-node` or `@effect/platform-browser` for IndexedDB. `none` when nothing is stored.
 - Greenfield mode: evidence is only `user:` and `decided:` entries, `replaces` lists are empty, and `persistence.current` is `"none"`.
 - `repo.frontend.kind`: `none`, `foldkit`, `tanstack-start-atom` or `other`. `path` is the frontend folder. `transport`: `rpc`, `http-api`, `server-fn`, `local` or `other`, the way the frontend reaches the domain today. Both are omitted for `none`.

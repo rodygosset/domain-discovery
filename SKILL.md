@@ -51,7 +51,7 @@ Copy this checklist and tick it off as you go.
 - [ ] 5. Draw boundaries and rank them
 - [ ] 6. Resolve tensions and replay stories
 - [ ] 7. Write the plan
-- [ ] 8. Check and get sign-off
+- [ ] 8. Summarize and get sign-off
 - [ ] 9. Render the docs
 ```
 
@@ -90,11 +90,18 @@ Set an element to `"confirmed"` only when the user agreed with it or told you to
 
 ### 7. Write the plan
 
-First settle the technical choices the plan needs: `repo.storage`, `repo.frontend.kind` and `repo.frontend.transport`. In refactor mode, take them from the code. In greenfield mode, ask the user, one plain question each. [references/frontend.md](references/frontend.md) suggests a default transport.
+First settle the technical choices the plan needs: `repo.storage`, `repo.frontend.kind` and `repo.frontend.transport`. In refactor mode, take them from the code. In greenfield mode, ask the user, one question each. [references/frontend.md](references/frontend.md) suggests a default transport.
+
+Then settle the folder layout, since every path in the plan depends on it:
+
+1. Read the project's conventions: monorepo or not, folder naming style, framework folders such as `src/routes`.
+2. Propose a tree that follows those conventions and keeps every boundary rule in [references/effect-mapping.md](references/effect-mapping.md).
+3. Show the tree and ask: adapted to the project (recommended), the skill's default, or adapted with changes.
+4. Record the answer in `repo.layout`, and each deviation from the default as a tension with its reason.
 
 Then follow the layout, the step order and the step rules in [references/effect-mapping.md](references/effect-mapping.md). When `repo.frontend.kind` is not `none`, add the frontend steps from [references/frontend.md](references/frontend.md). Each step lists the exact files it creates, moves, edits and deletes, the model ids it implements, and the commands that verify it.
 
-### 8. Check and get sign-off
+### 8. Summarize and get sign-off
 
 From the repository root, run `scripts/check-model.mjs` from this skill's folder. Fix every error it reports. Repeat until it prints `OK`.
 
@@ -102,7 +109,18 @@ From the repository root, run `scripts/check-model.mjs` from this skill's folder
 node <skill-folder>/scripts/check-model.mjs domain-model.json
 ```
 
-Then show the user a one-screen summary in plain words: the parts of the business, the main stories, and what will move where (refactor) or what will be built (greenfield). Ask for sign-off. Apply any correction to the model and run the checker again.
+Then show one screen, in the user's words, in this order:
+
+1. What the system is for, in one sentence.
+2. The parts of the business, with their rank.
+3. The key words, and the words being retired.
+4. For each part: what it tracks and its main rules.
+5. The main stories, by title.
+6. Decisions made, and what is left out.
+7. The target folder tree, two levels deep.
+8. What changes: what moves and what is deleted (refactor), or what gets built (greenfield).
+
+Ask: approve (recommended), or change something. Apply each change to the model, run the checker, and show the summary again. The outputs are not complete until the user approves.
 
 ### 9. Render the docs
 
@@ -117,5 +135,5 @@ Read every file. If something is wrong or unclear, fix the model, not the docs, 
 ## Done when
 
 - The checker prints `OK`.
-- The user has signed off on the summary.
+- The user has approved the summary.
 - `node <skill-folder>/scripts/render-docs.mjs domain-model.json --check` prints `OK`.

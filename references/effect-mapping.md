@@ -18,7 +18,7 @@ Effect 4 stable ships these modules inside the `effect` package: `effect` (core,
 
 ## Target layout
 
-One folder per bounded context. Server code in another context imports it through `index.ts`. Browser code imports it through `contract/`, or through `browser.ts` when the context runs in the browser.
+One folder per bounded context, at `repo.layout.contextRoot`. The default is `src/<context>`. Server code in another context imports it through `index.ts`. Browser code imports it through `contract/`, or through `browser.ts` when the context runs in the browser.
 
 ```
 src/<context>/
@@ -45,6 +45,20 @@ src/<context>/
     RpcHandlers.ts or HttpApiHandlers.ts   server handlers for the transport
     Browser<Aggregate>Repository.ts        repository layer on browser storage, for transport local only
 ```
+
+### Fixed rules and adaptable placement
+
+These boundary rules never change. They are what make the design pay off:
+
+- One folder or package per context.
+- `domain/` imports only `effect` and other files in `domain/`.
+- `contract/` is safe for the browser.
+- Other contexts import only the public entry point: `index.ts`, `contract/` or `browser.ts`.
+- `infrastructure/` is the only place that knows about storage and outside systems.
+
+Placement adapts to the project's conventions: where contexts live, folder and file naming style, where the frontend lives. In a monorepo, each context can be a package whose `exports` expose only its entry points.
+
+A codebase grouped by technical type, such as `controllers/`, `services/` and `models/`, is not a convention to keep. It is the grouping the refactor replaces.
 
 ## Concept to construct
 

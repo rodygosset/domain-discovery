@@ -77,6 +77,14 @@ if (!Array.isArray(model.repo.checks) || model.repo.checks.length === 0) {
   fail("repo.checks", "list at least one build or test command")
 }
 if (!["refactor", "greenfield"].includes(model.repo.mode)) fail("repo.mode", `must be "refactor" or "greenfield"`)
+const contextRoot = model.repo.layout?.contextRoot
+let contextPattern
+if (typeof contextRoot !== "string" || !contextRoot.includes("<context>")) {
+  fail("repo.layout.contextRoot", `must contain "<context>", such as "src/<context>"`)
+} else {
+  const escaped = contextRoot.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace("<context>", "[^/]+")
+  contextPattern = new RegExp(`^${escaped}$`)
+}
 if (typeof model.repo.storage !== "string" || model.repo.storage.length === 0) {
   fail("repo.storage", `name the storage package, or "none"`)
 }
@@ -161,7 +169,12 @@ const ref = (where, field, value, set) => {
 }
 
 for (const term of model.glossary) ref(`glossary.${term.id}`, "context", term.context, has.ctx)
-for (const context of model.contexts) ref(`contexts.${context.id}`, "subdomain", context.subdomain, has.sub)
+for (const context of model.contexts) {
+  ref(`contexts.${context.id}`, "subdomain", context.subdomain, has.sub)
+  if (contextPattern && !contextPattern.test(context.module ?? "")) {
+    fail(`contexts.${context.id}`, `module "${context.module}" does not follow repo.layout.contextRoot "${contextRoot}"`)
+  }
+}
 for (const relation of model.relations) {
   const where = `relations.${relation.id}`
   ref(where, "from", relation.from, has.ctx)

@@ -43,7 +43,15 @@ const table = (headers, rows) =>
       ...rows.map((row) => `| ${row.map(cell).join(" | ")} |`)
     ].join("\n") + "\n"
 const fields = (map) => Object.entries(map ?? {}).map(([key, type]) => `\`${key}: ${type}\``).join(", ") || "none"
-const folder = (context) => context.module.split("/").filter(Boolean).pop()
+const contextRoot = model.repo?.layout?.contextRoot ?? "src/<context>"
+const [rootBefore, rootAfter] = contextRoot.split("<context>")
+const folder = (context) => {
+  const module = context.module
+  if (module.startsWith(rootBefore) && module.endsWith(rootAfter)) {
+    return module.slice(rootBefore.length, module.length - rootAfter.length)
+  }
+  return module.split("/").filter(Boolean).pop()
+}
 const contextFile = (context) => `contexts/${folder(context)}.md`
 const contextOf = (element) => element.context ?? byId.get(element.aggregate)?.context
 const inContext = (key, id) => list(key).filter((element) => contextOf(element) === id)
@@ -340,7 +348,7 @@ files.set("architecture.md", doc(
   "",
   "## Layout",
   "",
-  "One folder per context:",
+  `One folder per context, at \`${contextRoot}\`:`,
   "",
   table(["Context", "Folder"], list("contexts").map((context) => [context.name, `\`${context.module}\``])),
   "Inside each context folder:",
