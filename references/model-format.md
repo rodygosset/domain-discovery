@@ -1,6 +1,6 @@
 # Model format
 
-`domain-model.json` is the only output. A refactoring agent reads it and nothing else, so every name, file path and decision it needs is in this file.
+`domain-model.json` is the source for everything else. The agent that applies the plan reads only this file, so every name, file path and decision it needs is here. `scripts/render-docs.mjs` builds `docs/domain/` from it.
 
 ## Contents
 - Shared fields
