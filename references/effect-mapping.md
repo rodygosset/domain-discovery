@@ -253,6 +253,7 @@ Plan the steps in this order. Split a step per aggregate or per context when it 
 10. If `repo.frontend.kind` is not `none`, move the frontend onto the contracts. [frontend.md](frontend.md) gives the steps.
 11. Rename what is left to the glossary terms in each `retire` list.
 12. Build the application layer from each context's `layer`. Delete dead modules and endpoints that nothing calls.
+13. Check `docs/domain` against the code: every folder and file it names exists, and every name matches. Fix the docs where they differ. Add one line to `AGENTS.md` or `CLAUDE.md`: "Domain docs are in docs/domain/README.md." Delete `domain-model.json`. From here on, the docs are the record of the domain.
 
 ## Rules for every step
 

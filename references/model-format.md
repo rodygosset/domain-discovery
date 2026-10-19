@@ -12,7 +12,7 @@
 
 Every element outside `plan` has these fields:
 
-- `id`: unique across the file. Use the prefix for its section, then a camelCase name: `term.`, `sub.`, `ctx.`, `rel.`, `vo.`, `agg.`, `inv.`, `cmd.`, `evt.`, `pol.`, `qry.`, `err.`, `ext.`, `ten.`.
+- `id`: unique across the file. Use the prefix for its section, then a camelCase name: `term.`, `sub.`, `ctx.`, `rel.`, `vo.`, `agg.`, `inv.`, `cmd.`, `evt.`, `pol.`, `qry.`, `err.`, `ext.`, `ten.`, `sto.`.
 - `status`: `"hypothesis"` while it comes only from code. `"confirmed"` once the user agrees or explicitly delegates the decision to you.
 - `evidence`: a list of strings. Code evidence is `"path/to/file.ts:42"`. User evidence is `"user: <their words>"`. A decision the user delegated is `"decided: <reason>"`.
 
@@ -74,6 +74,7 @@ The example is an online shop, trimmed. Ids such as `ctx.shipping` and `cmd.prep
       "context": "ctx.ordering",
       "name": "Order",
       "identity": "vo.orderId",
+      "why": "Placing an order needs only the order itself, and two placements of one order must not both succeed.",
       "states": [
         { "name": "DraftOrder", "fields": { "id": "OrderId", "total": "Money" } },
         { "name": "PlacedOrder", "fields": { "id": "OrderId", "total": "Money", "placedAt": "DateTimeUtc" } }
@@ -108,6 +109,18 @@ The example is an online shop, trimmed. Ids such as `ctx.shipping` and `cmd.prep
   "tensions": [
     { "id": "ten.cartName", "code": "Calls it Cart from start to finish.", "user": "Calls it Order once checkout starts.", "resolution": "Rename to Order.", "status": "confirmed", "evidence": [] }
   ],
+  "stories": [
+    {
+      "id": "sto.checkout",
+      "title": "A customer buys",
+      "kind": "main",
+      "steps": ["The customer filled an order.", "The customer placed the order.", "The warehouse prepared the shipment."],
+      "refs": ["cmd.placeOrder", "evt.orderPlaced", "pol.prepareShipmentOnPlace"],
+      "status": "confirmed",
+      "evidence": ["user: that's the normal day"]
+    }
+  ],
+  "outOfScope": ["Gift cards stay in the old module for now."],
   "openQuestions": [],
   "plan": {
     "steps": [
@@ -119,6 +132,17 @@ The example is an online shop, trimmed. Ids such as `ctx.shipping` and `cmd.prep
         "move": [],
         "edit": [{ "path": "src/cart/Cart.ts", "change": "Type the id field as OrderId." }],
         "delete": [],
+        "dependsOn": [],
+        "verify": ["pnpm tsc --noEmit"]
+      },
+      {
+        "id": "step.14",
+        "title": "Check the domain docs and remove the model",
+        "refs": [],
+        "create": [],
+        "move": [],
+        "edit": [{ "path": "AGENTS.md", "change": "Add: Domain docs are in docs/domain/README.md." }],
+        "delete": ["domain-model.json"],
         "dependsOn": [],
         "verify": ["pnpm tsc --noEmit"]
       }
@@ -139,5 +163,8 @@ The example is an online shop, trimmed. Ids such as `ctx.shipping` and `cmd.prep
 - `aggregates.persistence.strategy`: `state` (store the current state) unless the code already stores events.
 - `commands.replaces` and `queries.replaces`: every current function, endpoint or handler that the new element supersedes.
 - `policies.trigger`: `{ "event": "<evt id>" }` or `{ "schedule": "<cron>" }`. `timing`: `same-transaction` only when the user said both changes must succeed or fail together.
+- `aggregates.why`: why the boundary is where it is, from the user's answers about what must be exactly right when a decision is made.
+- `stories`: every story the user confirmed, in the user's words and the past tense. `kind`: `main`, `unhappy` (things going wrong) or `case` (a real case replayed against the model). At least one `main` and one `case`. `refs` lists the commands, events and policies the story walks through.
+- `outOfScope`: what the user chose to leave out, one sentence each. Empty if nothing.
 - `openQuestions`: must be empty at hand-over.
-- `plan.steps`: ordered. Every model id appears in some step's `refs`. Each step changes at least one file, names commands in `verify`, and keeps the build and tests passing.
+- `plan.steps`: ordered. The last step checks `docs/domain` against the code, adds the docs pointer to `AGENTS.md` or `CLAUDE.md`, and deletes `domain-model.json`. Every model id appears in some step's `refs`. Each step changes at least one file, names commands in `verify`, and keeps the build and tests passing.

@@ -37,7 +37,8 @@ const sections = {
   queries: "qry.",
   errors: "err.",
   externalSystems: "ext.",
-  tensions: "ten."
+  tensions: "ten.",
+  stories: "sto."
 }
 
 const required = {
@@ -46,14 +47,15 @@ const required = {
   contexts: ["name", "subdomain", "purpose", "module"],
   relations: ["from", "to", "via", "translation", "carries"],
   valueObjects: ["context", "name", "kind", "rules", "replaces"],
-  aggregates: ["context", "name", "identity", "states", "entities", "invariants", "persistence"],
+  aggregates: ["context", "name", "identity", "why", "states", "entities", "invariants", "persistence"],
   commands: ["aggregate", "name", "intent", "actor", "input", "emits", "rejectsWith", "replaces"],
   events: ["aggregate", "name", "fields"],
   policies: ["context", "name", "trigger", "then", "timing", "replaces"],
   queries: ["context", "name", "input", "output", "replaces"],
   errors: ["context", "name", "fields", "meaning"],
   externalSystems: ["context", "name", "purpose", "operations", "current"],
-  tensions: ["code", "user", "resolution"]
+  tensions: ["code", "user", "resolution"],
+  stories: ["title", "kind", "steps", "refs"]
 }
 
 const enums = {
@@ -66,7 +68,7 @@ const enums = {
 
 // Top-level shape
 
-for (const key of ["version", "repo", "purpose", ...Object.keys(sections), "openQuestions", "plan"]) {
+for (const key of ["version", "repo", "purpose", ...Object.keys(sections), "outOfScope", "openQuestions", "plan"]) {
   if (!(key in model)) fail("model", `missing top-level key "${key}"`)
 }
 if (errors.length > 0) report()
@@ -211,6 +213,15 @@ for (const section of ["queries", "errors", "externalSystems"]) {
 for (const tension of model.tensions) {
   if (!tension.resolution) fail(`tensions.${tension.id}`, "has no resolution")
 }
+if (!Array.isArray(model.outOfScope)) fail("outOfScope", "must be a list, empty if nothing was left out")
+for (const story of model.stories) {
+  const where = `stories.${story.id}`
+  if (!["main", "unhappy", "case"].includes(story.kind)) fail(where, `"kind" must be main, unhappy or case`)
+  if (!story.steps?.length) fail(where, "has no steps")
+  for (const id of story.refs ?? []) if (!ids.has(id)) fail(where, `refs unknown id "${id}"`)
+}
+if (!model.stories.some((story) => story.kind === "main")) fail("stories", "needs at least one main story")
+if (!model.stories.some((story) => story.kind === "case")) fail("stories", "needs at least one real case")
 if (model.openQuestions.length > 0) {
   fail("openQuestions", `${model.openQuestions.length} question(s) still open`)
 }
@@ -281,6 +292,11 @@ for (const section of mustPlan) {
   for (const element of model[section]) {
     if (!planned.has(element.id)) fail(`${section}.${element.id}`, "no plan step refs it")
   }
+}
+
+const lastStep = steps.at(-1)
+if (lastStep && !(lastStep.delete ?? []).includes("domain-model.json")) {
+  fail(`plan.${lastStep.id}`, "the last step must delete domain-model.json, after checking docs/domain against the code")
 }
 
 report()
