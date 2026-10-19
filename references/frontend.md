@@ -17,7 +17,7 @@ Read this file when `repo.frontend.kind` is not `none`.
 `repo.frontend.transport` says how the frontend reaches the domain.
 
 - Refactor mode: keep the transport the code uses today. Changing it is a behavior change and needs a resolved tension.
-- Greenfield mode: ask the user. Suggest `rpc` when only this frontend calls the server, `http-api` when other clients need a public HTTP API, and `local` when the data should live on the user's device.
+- Greenfield mode: ask the user. Suggest `http-api` by default, `rpc` when the protocol may be something other than HTTP, such as WebSockets or workers, and `local` when the data should live on the user's device.
 
 | Transport | The frontend calls | The frontend imports |
 |---|---|---|
