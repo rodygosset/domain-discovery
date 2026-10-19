@@ -289,7 +289,7 @@ Plan the steps in the order for `repo.mode`. Split a step per aggregate or per c
 
 ### Last step
 
-Check `docs/domain` against the code: every folder and file it names exists, and every name matches. Fix the docs where they differ. Add one line to `AGENTS.md` or `CLAUDE.md`: "Domain docs are in docs/domain/README.md." Delete `domain-model.json`. From here on, the docs are the record of the domain.
+Check `docs/domain` against the code: every folder and file it names exists, and every name matches. Fix the docs where they differ. Make the edits this step lists for the project's existing docs. Add one line to `AGENTS.md` or `CLAUDE.md`: "Domain docs are in docs/domain/README.md." Delete `domain-model.json`. From here on, the docs are the record of the domain.
 
 ## Rules for every step
 

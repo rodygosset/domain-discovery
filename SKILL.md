@@ -120,6 +120,8 @@ Then show one screen, in the user's words, in this order:
 7. The target folder tree, two levels deep.
 8. What changes: what moves and what is deleted (refactor), or what gets built (greenfield).
 
+If the project already has docs, list them: READMEs, `docs/`, `AGENTS.md`, `CLAUDE.md`, decision records. Then ask: update them to match the model (recommended), or leave them for now. To update, add an edit for each one to the plan's last step. To leave them, record them in `outOfScope`.
+
 Ask: approve (recommended), or change something. Apply each change to the model, run the checker, and show the summary again. The outputs are not complete until the user approves.
 
 ### 9. Render the docs
