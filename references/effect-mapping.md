@@ -18,12 +18,15 @@ Effect 4 stable ships these modules inside the `effect` package: `effect` (core,
 
 ## Target layout
 
-One folder per bounded context. Server code in another context imports it through `index.ts`. Browser code imports it through `contract.ts`.
+One folder per bounded context. Server code in another context imports it through `index.ts`. Browser code imports it through `contract/`, or through `browser.ts` when the context runs in the browser.
 
 ```
 src/<context>/
-  index.ts                         server API: service classes and <Context>Live, the layer behind the RPC handlers
-  contract.ts                      browser-safe API: schemas and the RpcGroup
+  index.ts                         server API: service classes and <Context>Live
+  contract/
+    index.ts                       browser-safe schemas: ids, values, commands, queries, events, errors
+    Rpc.ts or HttpApi.ts           browser-safe transport definition, when the transport needs one
+  browser.ts                       layer that runs the context in the browser, for transport local only
   domain/
     <Name>.ts                      one value object per file
     <Aggregate>.ts                 states, commands, events, decide, evolve
@@ -39,7 +42,8 @@ src/<context>/
     Memory<Aggregate>Repository.ts repository layer for tests
     <External>.ts                  adapter for an external system
     From<Upstream>.ts              translation from an upstream context
-    Rpc.ts                         RpcGroup handlers that call the command and query services
+    RpcHandlers.ts or HttpApiHandlers.ts   server handlers for the transport
+    Browser<Aggregate>Repository.ts        repository layer on browser storage, for transport local only
 ```
 
 ## Concept to construct
@@ -65,9 +69,13 @@ src/<context>/
 | Relation with `translation: acl` | downstream subscribes to the upstream bus and decodes into its own commands | `infrastructure/From<Upstream>.ts` |
 | Current time | `DateTime.now`, so tests control it with `TestClock` | anywhere |
 | New ids | a small `Context.Service` per id kind, so tests fix the values | `application/` |
-| Contract | `RpcGroup.make` with one `Rpc.make` per command and query, a streaming `Rpc` for events the frontend watches | `contract.ts` |
-| RPC handlers | `<Group>.toLayer`, each handler calls one command or query service method | `infrastructure/Rpc.ts` |
-| Other HTTP edge | `HttpApi` handlers that only decode input and call a command or query service | existing edge files |
+| Contract | schemas re-exported from `domain/`, plus one `Schema.TaggedClass` per query and a schema for its result | `contract/index.ts` |
+| Transport `rpc` | `RpcGroup.make` from the contract schemas; handlers with `<Group>.toLayer` | `contract/Rpc.ts`, `infrastructure/RpcHandlers.ts` |
+| Transport `http-api` | `HttpApiGroup.make` with one endpoint per command and query, errors annotated with `HttpApiSchema.status`; handlers with `HttpApiBuilder.group` | `contract/HttpApi.ts`, `infrastructure/HttpApiHandlers.ts` |
+| Transport `server-fn` | one TanStack Start `createServerFn` per command and query, run through a `ManagedRuntime` of the application layer | the frontend's server files |
+| Transport `local` | the context runs in the browser. `browser.ts` builds its layer with repositories on `IndexedDb` from `@effect/platform-browser` or on `@effect/sql-sqlite-wasm`. Sync with a server, if any, is an external system, for example built on `effect/eventlog` | `browser.ts`, `infrastructure/Browser<Aggregate>Repository.ts` |
+| Transport `other` | the existing mechanism, with each handler calling one command or query service method | existing files |
+| Any other entry point | HTTP endpoints, CLI commands or queue consumers that only decode input and call a command or query service | existing files |
 
 ## Code shapes
 
@@ -169,36 +177,56 @@ export class OrderCommands extends Context.Service<OrderCommands, {
 
 The SQL repository keeps its row shape in `infrastructure/`, as a `Model.Class` from `effect/schema`. It builds the basic operations with `SqlModel.makeRepository` from `effect/sql`, and converts between rows and aggregate states. Rows never leave `infrastructure/`.
 
-Contract. It re-exports domain schemas and defines the RPC group. It imports only `effect`, `effect/rpc` and files in `domain/`, so a browser bundle can include it.
+Contract. It re-exports domain schemas and adds the query schemas. It imports only `effect` and files in `domain/`, so a browser bundle can include it.
 
 ```ts
 import { Schema } from "effect"
-import { Rpc, RpcGroup } from "effect/rpc"
-import { OrderAlreadyPlaced, OrderNotFound } from "./domain/errors.ts"
-import { DraftOrder, OrderEvent, PlaceOrder } from "./domain/Order.ts"
+import { DraftOrder } from "../domain/Order.ts"
 
-export { Money } from "./domain/Money.ts"
-export { OrderId } from "./domain/OrderId.ts"
-export { DraftOrder, OrderAlreadyPlaced, OrderEvent, OrderNotFound, PlaceOrder }
+export { Money } from "../domain/Money.ts"
+export { OrderId } from "../domain/OrderId.ts"
+export { DraftOrder, OrderEvent, OrderPlaced, PlaceOrder } from "../domain/Order.ts"
+export { OrderAlreadyPlaced, OrderNotFound } from "../domain/errors.ts"
 
+export class ListDraftOrders extends Schema.TaggedClass<ListDraftOrders>()("ListDraftOrders", {}) {}
+export const DraftOrders = Schema.Array(DraftOrder)
+```
+
+The transport the model names in `repo.frontend.transport` decides what comes next. Keep the transport the code uses today. Changing it is a behavior change and needs a resolved tension.
+
+Transport `rpc`, in `contract/Rpc.ts`:
+
+```ts
 export const OrderingRpcs = RpcGroup.make(
   Rpc.make("PlaceOrder", { payload: PlaceOrder, error: Schema.Union([OrderAlreadyPlaced, OrderNotFound]) }),
-  Rpc.make("ListDraftOrders", { success: Schema.Array(DraftOrder) }),
+  Rpc.make("ListDraftOrders", { payload: ListDraftOrders, success: DraftOrders }),
   Rpc.make("WatchOrders", { success: OrderEvent, stream: true })
 )
 ```
 
-RPC handlers. Each handler calls one service method and holds no logic.
+Transport `http-api`, in `contract/HttpApi.ts`. HTTP status codes live here, never in `domain/`:
 
 ```ts
-export const OrderingRpcsLive = OrderingRpcs.toLayer(
+export class OrderingApi extends HttpApiGroup.make("ordering").add(
+  HttpApiEndpoint.post("placeOrder", "/orders/:id/place", {
+    params: { id: OrderId },
+    error: [OrderAlreadyPlaced.pipe(HttpApiSchema.status(409)), OrderNotFound.pipe(HttpApiSchema.status(404))]
+  }),
+  HttpApiEndpoint.get("listDraftOrders", "/orders/drafts", { success: DraftOrders })
+) {}
+```
+
+Handlers call one service method each and hold no logic:
+
+```ts
+export const OrderingRpcHandlers = OrderingRpcs.toLayer(
   Effect.gen(function*() {
     const commands = yield* OrderCommands
     const queries = yield* OrderingQueries
     const events = yield* OrderingEvents
     return {
       PlaceOrder: (command) => commands.place(command),
-      ListDraftOrders: () => queries.listDraftOrders,
+      ListDraftOrders: (query) => queries.listDraftOrders(query),
       WatchOrders: () => events.subscribe
     }
   })
@@ -221,7 +249,7 @@ Plan the steps in this order. Split a step per aggregate or per context when it 
 6. Add the event buses and policies. Delete the hooks, listeners and callbacks they replace.
 7. Add query services and move read callers.
 8. Add ports and adapters for external systems, and the translation for each `acl` relation.
-9. Add each context's `contract.ts` and `infrastructure/Rpc.ts`. Serve the RPC groups next to the existing endpoints.
+9. Add each context's `contract/index.ts`. Add the transport files that `repo.frontend.transport` calls for, and serve them next to the existing endpoints.
 10. If `repo.frontend.kind` is not `none`, move the frontend onto the contracts. [frontend.md](frontend.md) gives the steps.
 11. Rename what is left to the glossary terms in each `retire` list.
 12. Build the application layer from each context's `layer`. Delete dead modules and endpoints that nothing calls.
@@ -230,6 +258,6 @@ Plan the steps in this order. Split a step per aggregate or per context when it 
 
 - Leave `repo.checks` passing at the end of each step.
 - Use glossary terms for every name the step creates.
-- Never import from another context's `domain/`, `application/` or `infrastructure/`. Import its `index.ts`, or its `contract.ts` from browser code.
-- Files in `domain/` import only `effect` and other files in `domain/`. This keeps `contract.ts` safe for the browser.
+- Never import from another context's `domain/`, `application/` or `infrastructure/`. Import its `index.ts`, or from browser code its `contract/` or `browser.ts`.
+- Files in `domain/` import only `effect` and other files in `domain/`. Files in `contract/` import only `effect`, `effect/rpc`, `effect/http-api` and `domain/`. This keeps `contract/` safe for the browser.
 - Keep behavior unchanged. A behavior change needs a tension with a resolution in the model.

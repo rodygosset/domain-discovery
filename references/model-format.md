@@ -35,7 +35,7 @@ The example is an online shop, trimmed. Ids such as `ctx.shipping` and `cmd.prep
     "effectVersion": "4.0.5",
     "packageManager": "pnpm",
     "checks": ["pnpm tsc --noEmit", "pnpm vitest run"],
-    "frontend": { "kind": "tanstack-start-atom", "path": "src/routes" }
+    "frontend": { "kind": "tanstack-start-atom", "path": "src/routes", "transport": "http-api" }
   },
   "purpose": {
     "summary": "Customers buy products online and the warehouse ships them.",
@@ -129,7 +129,7 @@ The example is an online shop, trimmed. Ids such as `ctx.shipping` and `cmd.prep
 
 ## Section rules
 
-- `repo.frontend.kind`: `none`, `foldkit`, `tanstack-start-atom` or `other`. `path` is the frontend folder, and is omitted for `none`.
+- `repo.frontend.kind`: `none`, `foldkit`, `tanstack-start-atom` or `other`. `path` is the frontend folder. `transport`: `rpc`, `http-api`, `server-fn`, `local` or `other`, the way the frontend reaches the domain today. Both are omitted for `none`.
 - `glossary`: one entry per domain term. `retire` lists the code names that the refactor renames to `term`.
 - `subdomains.kind`: `core` (what sets the business apart), `supporting` (needed, specific to them) or `generic` (anyone's version would do).
 - `contexts.module`: the folder the context will own after the refactor.

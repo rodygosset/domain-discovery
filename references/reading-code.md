@@ -41,6 +41,8 @@ Turn an Effect v4 codebase into a first draft of the model. Every entry starts a
 
 Record the frontend in `repo.frontend`. `kind` is `foldkit` when `package.json` depends on `foldkit`, `tanstack-start-atom` when it depends on `@tanstack/react-start` and `@effect/atom-react`, `other` for any other frontend, and `none` without one. `path` is its folder.
 
+Record how it reaches the domain today in `transport`: `rpc` for an `RpcClient`, `http-api` for an `HttpApiClient`, `server-fn` for TanStack Start server functions, `local` when the data lives in the browser (IndexedDB, SQLite in the browser, local storage), and `other` for anything else, such as plain `fetch` calls. When the code mixes several, record the one most screens use and add a tension for the rest.
+
 | Model element | Look for in the frontend |
 |---|---|
 | Glossary term | Button labels, page titles, form labels, empty states, error messages shown to users. |

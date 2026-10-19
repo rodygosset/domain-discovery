@@ -1,6 +1,6 @@
 ---
 name: domain-discovery
-description: Models the business domain of an existing Effect v4 TypeScript codebase. Reads the code first, then interviews the user in plain language, and writes domain-model.json with the glossary, bounded contexts, aggregates, commands, events, policies and a step-by-step refactoring plan in Effect v4 constructs, including moving a Foldkit or TanStack Start frontend onto browser-safe contracts. A refactoring agent can apply the plan without asking questions. Use when the user wants to find the domain model or ubiquitous language of an Effect codebase, or to plan a domain-driven design refactor of one.
+description: Models the business domain of an existing Effect v4 TypeScript codebase. Reads the code first, then interviews the user in plain language, and writes domain-model.json with the glossary, bounded contexts, aggregates, commands, events, policies and a step-by-step refactoring plan in Effect v4 constructs, including moving a Foldkit or TanStack Start frontend onto browser-safe contracts over RPC, HttpApi, server functions or local-first storage. A refactoring agent can apply the plan without asking questions. Use when the user wants to find the domain model or ubiquitous language of an Effect codebase, or to plan a domain-driven design refactor of one.
 ---
 
 # Domain discovery
