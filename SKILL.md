@@ -1,6 +1,6 @@
 ---
 name: domain-discovery
-description: Models the business domain of an existing Effect v4 TypeScript codebase. Reads the code first, then interviews the user in plain language, and writes domain-model.json with the glossary, bounded contexts, aggregates, commands, events, policies and a step-by-step refactoring plan in Effect v4 constructs. A refactoring agent can apply the plan without asking questions. Use when the user wants to find the domain model or ubiquitous language of an Effect codebase, or to plan a domain-driven design refactor of one.
+description: Models the business domain of an existing Effect v4 TypeScript codebase. Reads the code first, then interviews the user in plain language, and writes domain-model.json with the glossary, bounded contexts, aggregates, commands, events, policies and a step-by-step refactoring plan in Effect v4 constructs, including moving a Foldkit or TanStack Start frontend onto browser-safe contracts. A refactoring agent can apply the plan without asking questions. Use when the user wants to find the domain model or ubiquitous language of an Effect codebase, or to plan a domain-driven design refactor of one.
 ---
 
 # Domain discovery
@@ -14,7 +14,7 @@ Read an Effect v4 codebase, interview the user, and write `domain-model.json` at
 - Use the user's words. Never offer a term the user has not said.
 - Treat the code as evidence of what the system does. Treat the user as the authority on what it means. Record each disagreement as a tension.
 - Ask one question per message.
-- Map every planned change to an Effect v4 construct from [references/effect-mapping.md](references/effect-mapping.md).
+- Map every planned change to an Effect v4 construct from [references/effect-mapping.md](references/effect-mapping.md). For a Foldkit or TanStack Start frontend, also follow [references/frontend.md](references/frontend.md).
 
 ## Workflow
 
@@ -65,7 +65,7 @@ Set an element to `"confirmed"` only when the user agreed with it or told you to
 
 ### 7. Write the plan
 
-Follow the layout, the step order and the step rules in [references/effect-mapping.md](references/effect-mapping.md). Each step lists the exact files it creates, moves, edits and deletes, the model ids it implements, and the commands that verify it.
+Follow the layout, the step order and the step rules in [references/effect-mapping.md](references/effect-mapping.md). When `repo.frontend.kind` is not `none`, add the frontend steps from [references/frontend.md](references/frontend.md). Each step lists the exact files it creates, moves, edits and deletes, the model ids it implements, and the commands that verify it.
 
 ### 8. Check and hand over
 

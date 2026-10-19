@@ -5,6 +5,7 @@ Turn an Effect v4 codebase into a first draft of the model. Every entry starts a
 ## Contents
 - Order of reading
 - Where each model element hides
+- Frontend code
 - Signs of a boundary
 - Signs of a misleading name
 
@@ -15,7 +16,8 @@ Turn an Effect v4 codebase into a first draft of the model. Every entry starts a
 3. The `Context.Service` classes and their `Layer` graph. Note what each service depends on.
 4. The schemas: `Schema.Class`, `Schema.Struct`, `Schema.TaggedError`, and the SQL tables and migrations.
 5. The text that humans read: UI strings, error messages, log messages, `Effect.fn` span names.
-6. Git history: `git log --format= --name-only | sort | uniq -c | sort -rn | head -40` shows where change concentrates.
+6. The frontend, if there is one. See "Frontend code" below.
+7. Git history: `git log --format= --name-only | sort | uniq -c | sort -rn | head -40` shows where change concentrates.
 
 ## Where each model element hides
 
@@ -34,6 +36,20 @@ Turn an Effect v4 codebase into a first draft of the model. Every entry starts a
 | Query | Read endpoints, list and search functions, joins that build screens. |
 | External system | `HttpClient` services, SDK clients, webhooks received. |
 | Domain error | `Schema.TaggedError` definitions whose message a user would understand. Errors about storage or the network are not domain errors. |
+
+## Frontend code
+
+Record the frontend in `repo.frontend`. `kind` is `foldkit` when `package.json` depends on `foldkit`, `tanstack-start-atom` when it depends on `@tanstack/react-start` and `@effect/atom-react`, `other` for any other frontend, and `none` without one. `path` is its folder.
+
+| Model element | Look for in the frontend |
+|---|---|
+| Glossary term | Button labels, page titles, form labels, empty states, error messages shown to users. |
+| Command | Form submits and button handlers that write. A Foldkit `Command.define` that calls the server. A TanStack Start `createServerFn` with a POST method, or an `Atom.fn` that writes. |
+| Query | Loaders, read server functions, query atoms, Foldkit Commands that fetch. |
+| Event | Foldkit Messages named `Succeeded*`. Toasts that report something finished. Polling loops and websocket listeners that wait for a change. |
+| Lifecycle state | Badges and status labels. Foldkit Model unions. Buttons enabled only at some stages. |
+| Invariant | Client-side validation, disabled buttons, confirmation dialogs. Each one is a rule the server may not check. Record it with the frontend file as evidence. |
+| Misplaced logic | Server functions or Foldkit Commands that compute prices, statuses or permissions. Record each one as a tension. |
 
 ## Signs of a boundary
 

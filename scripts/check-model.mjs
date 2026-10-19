@@ -74,6 +74,14 @@ if (errors.length > 0) report()
 if (!Array.isArray(model.repo.checks) || model.repo.checks.length === 0) {
   fail("repo.checks", "list at least one build or test command")
 }
+const frontendKinds = ["none", "foldkit", "tanstack-start-atom", "other"]
+const frontend = model.repo.frontend
+if (!frontend || !frontendKinds.includes(frontend.kind)) {
+  fail("repo.frontend", `"kind" must be one of ${frontendKinds.join(", ")}`)
+} else if (frontend.kind !== "none") {
+  if (!frontend.path) fail("repo.frontend", `"path" is required when "kind" is "${frontend.kind}"`)
+  else if (!existsSync(resolve(root, frontend.path))) fail("repo.frontend", `folder not found: ${frontend.path}`)
+}
 for (const key of ["summary", "users", "value"]) {
   if (!model.purpose[key] || model.purpose[key].length === 0) fail("purpose", `missing "${key}"`)
 }

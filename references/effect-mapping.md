@@ -10,17 +10,20 @@ The target shape for the refactoring plan. Use these constructs and this layout 
 - Step order
 - Rules for every step
 
+For a frontend, also read [frontend.md](frontend.md).
+
 ## Import paths
 
 Effect 4 stable ships these modules inside the `effect` package: `effect` (core, `Schema`, `Context`, `Layer`), `effect/schema` (`Model`), `effect/sql`, `effect/http`, `effect/http-api`, `effect/rpc` and `effect/reactivity`. Database drivers are separate packages, such as `@effect/sql-pg`. Never import from `effect/unstable/*`, which only beta versions had.
 
 ## Target layout
 
-One folder per bounded context. Code inside a context imports another context only through that context's `index.ts`.
+One folder per bounded context. Server code in another context imports it through `index.ts`. Browser code imports it through `contract.ts`.
 
 ```
 src/<context>/
-  index.ts                         public API: ids, commands, events, errors, service classes, layer
+  index.ts                         server API: service classes and <Context>Live, the layer behind the RPC handlers
+  contract.ts                      browser-safe API: schemas and the RpcGroup
   domain/
     <Name>.ts                      one value object per file
     <Aggregate>.ts                 states, commands, events, decide, evolve
@@ -36,6 +39,7 @@ src/<context>/
     Memory<Aggregate>Repository.ts repository layer for tests
     <External>.ts                  adapter for an external system
     From<Upstream>.ts              translation from an upstream context
+    Rpc.ts                         RpcGroup handlers that call the command and query services
 ```
 
 ## Concept to construct
@@ -61,7 +65,9 @@ src/<context>/
 | Relation with `translation: acl` | downstream subscribes to the upstream bus and decodes into its own commands | `infrastructure/From<Upstream>.ts` |
 | Current time | `DateTime.now`, so tests control it with `TestClock` | anywhere |
 | New ids | a small `Context.Service` per id kind, so tests fix the values | `application/` |
-| HTTP or RPC edge | `HttpApi` or `RpcGroup` handlers that only decode input and call a command or query service | existing edge files |
+| Contract | `RpcGroup.make` with one `Rpc.make` per command and query, a streaming `Rpc` for events the frontend watches | `contract.ts` |
+| RPC handlers | `<Group>.toLayer`, each handler calls one command or query service method | `infrastructure/Rpc.ts` |
+| Other HTTP edge | `HttpApi` handlers that only decode input and call a command or query service | existing edge files |
 
 ## Code shapes
 
@@ -163,6 +169,42 @@ export class OrderCommands extends Context.Service<OrderCommands, {
 
 The SQL repository keeps its row shape in `infrastructure/`, as a `Model.Class` from `effect/schema`. It builds the basic operations with `SqlModel.makeRepository` from `effect/sql`, and converts between rows and aggregate states. Rows never leave `infrastructure/`.
 
+Contract. It re-exports domain schemas and defines the RPC group. It imports only `effect`, `effect/rpc` and files in `domain/`, so a browser bundle can include it.
+
+```ts
+import { Schema } from "effect"
+import { Rpc, RpcGroup } from "effect/rpc"
+import { OrderAlreadyPlaced, OrderNotFound } from "./domain/errors.ts"
+import { DraftOrder, OrderEvent, PlaceOrder } from "./domain/Order.ts"
+
+export { Money } from "./domain/Money.ts"
+export { OrderId } from "./domain/OrderId.ts"
+export { DraftOrder, OrderAlreadyPlaced, OrderEvent, OrderNotFound, PlaceOrder }
+
+export const OrderingRpcs = RpcGroup.make(
+  Rpc.make("PlaceOrder", { payload: PlaceOrder, error: Schema.Union([OrderAlreadyPlaced, OrderNotFound]) }),
+  Rpc.make("ListDraftOrders", { success: Schema.Array(DraftOrder) }),
+  Rpc.make("WatchOrders", { success: OrderEvent, stream: true })
+)
+```
+
+RPC handlers. Each handler calls one service method and holds no logic.
+
+```ts
+export const OrderingRpcsLive = OrderingRpcs.toLayer(
+  Effect.gen(function*() {
+    const commands = yield* OrderCommands
+    const queries = yield* OrderingQueries
+    const events = yield* OrderingEvents
+    return {
+      PlaceOrder: (command) => commands.place(command),
+      ListDraftOrders: () => queries.listDraftOrders,
+      WatchOrders: () => events.subscribe
+    }
+  })
+)
+```
+
 Infrastructure failures stay out of domain signatures. Convert them with `Effect.orDie`, unless the current code recovers from them. In that case add one `<Context>StorageError` to `domain/errors.ts` and record it in `errors`.
 
 Tests use `@effect/vitest`. Aggregate tests call decide functions with a state and assert the events or the error. Command service tests provide `layerTest`. Name each test after the rule it proves, in glossary terms: `"rejects placing an order twice"`.
@@ -179,12 +221,15 @@ Plan the steps in this order. Split a step per aggregate or per context when it 
 6. Add the event buses and policies. Delete the hooks, listeners and callbacks they replace.
 7. Add query services and move read callers.
 8. Add ports and adapters for external systems, and the translation for each `acl` relation.
-9. Rename what is left to the glossary terms in each `retire` list.
-10. Build the application layer from each context's `layer`. Delete dead modules.
+9. Add each context's `contract.ts` and `infrastructure/Rpc.ts`. Serve the RPC groups next to the existing endpoints.
+10. If `repo.frontend.kind` is not `none`, move the frontend onto the contracts. [frontend.md](frontend.md) gives the steps.
+11. Rename what is left to the glossary terms in each `retire` list.
+12. Build the application layer from each context's `layer`. Delete dead modules and endpoints that nothing calls.
 
 ## Rules for every step
 
 - Leave `repo.checks` passing at the end of each step.
 - Use glossary terms for every name the step creates.
-- Never import from another context's `domain/`, `application/` or `infrastructure/`. Import its `index.ts`.
+- Never import from another context's `domain/`, `application/` or `infrastructure/`. Import its `index.ts`, or its `contract.ts` from browser code.
+- Files in `domain/` import only `effect` and other files in `domain/`. This keeps `contract.ts` safe for the browser.
 - Keep behavior unchanged. A behavior change needs a tension with a resolution in the model.
