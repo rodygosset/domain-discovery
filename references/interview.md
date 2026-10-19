@@ -35,7 +35,7 @@ The user never hears a DDD term. You hold the concept and ask the plain question
 - Ask one question per message. The message holds the question and the draft it refers to, nothing else. Follow the writing rules in `SKILL.md`.
 - Lead with a concrete draft: "Here is how I think it goes. What is wrong?" People correct a draft faster than they describe from scratch.
 - Ask for stories, not definitions: "Tell me about the last time..."
-- Ask open questions. "What happens if..." beats "So X happens, right?"
+- Build the options from the draft and earlier answers. Make each one distinct, and never lead with the answer you want to hear.
 - Ask "Is that always true?" after every rule.
 - Ask "why" up to three times when a rule looks arbitrary. It may be a real constraint or a leftover from an old system.
 - Repeat the user's exact words back and use them in the model.

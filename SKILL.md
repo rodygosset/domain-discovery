@@ -25,7 +25,7 @@ Steps marked "refactor only" are skipped in greenfield mode.
 - Keep DDD terms out of the conversation. You think "invariant". You ask "Can this ever be refused?" [references/interview.md](references/interview.md) gives the plain question for each concept.
 - Use the user's words. Never offer a term the user has not said.
 - Treat the code as evidence of what the system does. Treat the user as the authority on what it means. Record each disagreement as a tension, whether between the code and the user or between two things the user said.
-- Ask one question per message.
+- Ask one question per message, as multiple choice: up to 4 likely answers, the most likely first and marked "(recommended)". Use the harness's questionnaire tool when it has one, such as `AskUserQuestion` in Claude Code. Without one, write the options as a numbered list. The user can always answer in their own words.
 - Map every planned change to an Effect v4 construct from [references/effect-mapping.md](references/effect-mapping.md). For a Foldkit or TanStack Start frontend, also follow [references/frontend.md](references/frontend.md).
 
 ## Writing
