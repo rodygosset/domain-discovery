@@ -23,7 +23,6 @@ Read this file when `repo.frontend.kind` is not `none`.
 |---|---|---|
 | `rpc` | an `RpcClient` built from `contract/Rpc.ts` | `contract/` |
 | `http-api` | an `HttpApiClient` built from `contract/HttpApi.ts` | `contract/` |
-| `server-fn` | TanStack Start server functions that call the command and query services | `contract/` |
 | `local` | the command and query services directly, running in the browser on the layer from `browser.ts` | `contract/` and `browser.ts` |
 | `other` | the existing mechanism, moved behind one client service per context | `contract/` |
 
@@ -102,7 +101,7 @@ Target layout:
 ```
 src/
   <context>/                  the bounded contexts
-  server/                     transport wiring for rpc, http-api or server-fn
+  server/                     transport wiring for rpc or http-api
   routes/
     <screen>.tsx              components: useAtomValue, useAtomSet
   web/
@@ -117,7 +116,6 @@ The client and the atoms depend on the transport:
 |---|---|---|
 | `rpc` | `HttpRouter.toWebHandler` over `RpcServer.layerHttp`, mounted on a server route | `AtomRpc.Service` with the group; atoms from `.query` and `.mutation` |
 | `http-api` | `HttpRouter.toWebHandler` over `HttpApiBuilder.layer`, mounted on a server route | `AtomHttpApi.Service` with the API; atoms from `.query` and `.mutation` |
-| `server-fn` | one `createServerFn` per command and query, each running one service method through a `ManagedRuntime` | `Atom.runtime` atoms and `fn` atoms that call the server functions |
 | `local` | none | `Atom.runtime` on the layer from `browser.ts`; atoms and `fn` atoms that call the services |
 | `other` | the existing server code | `Atom.runtime` on a client service that wraps the existing calls |
 
@@ -151,8 +149,8 @@ Add these steps after the contracts exist. Each step names the command and query
 In greenfield mode there is nothing to move. Build each screen on its client service from the start, using steps 1 and 5 only.
 
 1. Add one client service per context for the transport. With transport `local`, add `browser.ts` and the browser repositories instead.
-2. Move the screens of one context at a time onto its client service. For Foldkit, replace each direct call in a Command. For TanStack Start, replace each server function, loader call or `fetch` with a query or mutation atom.
+2. Move the screens of one context at a time onto its client service. For Foldkit, replace each direct call in a Command. For TanStack Start, replace each loader call or `fetch` with a query or mutation atom.
 3. Move each business rule found in frontend code into its aggregate or value object. Keep a browser copy only as a shared `Schema.check`, and only when the domain does not already run in the browser.
 4. Replace polling with a Subscription (Foldkit) or a stream atom (TanStack Start), when the model has an event the screen waits for.
 5. Move frontend files into the `<context>/` folders and add the import lint rule.
-6. Delete the old endpoints, server functions and client code that nothing calls.
+6. Delete the old endpoints and client code that nothing calls.

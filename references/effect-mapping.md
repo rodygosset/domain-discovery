@@ -1,6 +1,6 @@
 # Effect v4 mapping
 
-The target shape for the refactoring plan. Use these constructs and this layout by default. Deviate only where the model records a reason in `evidence`.
+The target shape for the plan. Use this layout and these constructs by default. Deviate only where the model records a reason in `evidence`.
 
 ## Contents
 - Import paths
@@ -31,19 +31,18 @@ src/<context>/
     <Name>.ts                      one value object per file
     <Aggregate>.ts                 states, commands, events, decide, evolve
     errors.ts                      domain errors of this context
-    <Aggregate>Repository.ts       repository interface only
+    <Aggregate>Repository.ts       repository interface only, no storage details
   application/
     <Aggregate>Commands.ts         one method per command
     <Context>Queries.ts            read operations
     <Context>Events.ts             in-process event bus
     policies.ts                    reactions to events and schedules
   infrastructure/
-    Sql<Aggregate>Repository.ts    repository layer on SqlClient
-    Memory<Aggregate>Repository.ts repository layer for tests
+    <Storage><Aggregate>Repository.ts   repository layer on the storage in repo.storage
+    Memory<Aggregate>Repository.ts      repository layer for tests
     <External>.ts                  adapter for an external system
     From<Upstream>.ts              translation from an upstream context
     RpcHandlers.ts or HttpApiHandlers.ts   server handlers for the transport
-    Browser<Aggregate>Repository.ts        repository layer on browser storage, for transport local only
 ```
 
 ### Fixed rules and adaptable placement
@@ -62,6 +61,13 @@ A codebase grouped by technical type, such as `controllers/`, `services/` and `m
 
 ## Concept to construct
 
+Two kinds of guidance:
+
+- The model and the contract use the constructs in the first table. These are how every context describes itself, so they stay the same everywhere.
+- The implementation has a fixed shape, in the second table, but no fixed API. Pick the Effect APIs that fit each piece and the technology behind it. Prefer Effect's modules over hand-written code or other libraries. Never assume a storage or a runtime the model does not name.
+
+### Model and contract
+
 | Model element | Effect v4 construct | File |
 |---|---|---|
 | Value object, `kind: id` | `Schema.String.pipe(Schema.brand("OrderId"))` | `domain/OrderId.ts` |
@@ -70,26 +76,31 @@ A codebase grouped by technical type, such as `controllers/`, `services/` and `m
 | Aggregate state | one `Schema.TaggedClass` per state, joined with `Schema.Union([...]).pipe(Schema.toTaggedUnion("_tag"))` | `domain/<Aggregate>.ts` |
 | Command | `Schema.TaggedClass`, joined per aggregate with `toTaggedUnion` | `domain/<Aggregate>.ts` |
 | Event | `Schema.TaggedClass`, joined per aggregate with `toTaggedUnion` | `domain/<Aggregate>.ts` |
-| Invariant | a check inside `decide` that fails with the invariant's error | `domain/<Aggregate>.ts` |
+| Invariant | a check inside the decide function that fails with the invariant's error | `domain/<Aggregate>.ts` |
 | Domain error | `Schema.TaggedError` | `domain/errors.ts` |
-| Repository | `Context.Service` interface; `layer` with `SqlModel.makeRepository`; `layerTest` on `Ref` | `domain/`, `infrastructure/` |
-| Command handling | `Context.Service`, one `Effect.fn("<Service>.<method>")` per command | `application/<Aggregate>Commands.ts` |
-| Query | `Context.Service`; reads with `SqlSchema.findAll` or `SqlSchema.findOneOption` | `application/<Context>Queries.ts` |
-| Event bus | `Context.Service` over `PubSub.bounded`, `subscribe` as `Stream.fromPubSub` | `application/<Context>Events.ts` |
-| Policy, `timing: eventual` | `Layer.effectDiscard` that runs `Stream.runForEach` on the bus with `Effect.forkScoped` | `application/policies.ts` |
-| Policy, `timing: same-transaction` | a second step in the same command method, wrapped in `sql.withTransaction` | `application/<Aggregate>Commands.ts` |
-| Policy, schedule trigger | `Layer.effectDiscard` with `Effect.repeat` and `Schedule.cron` | `application/policies.ts` |
-| External system | `Context.Service` port in `application/`, adapter `layer` on `HttpClient` | `infrastructure/<External>.ts` |
-| Relation with `translation: acl` | downstream subscribes to the upstream bus and decodes into its own commands | `infrastructure/From<Upstream>.ts` |
-| Current time | `DateTime.now`, so tests control it with `TestClock` | anywhere |
-| New ids | a small `Context.Service` per id kind, so tests fix the values | `application/` |
+| Repository interface | `Context.Service` whose methods speak in aggregate states | `domain/<Aggregate>Repository.ts` |
 | Contract | schemas re-exported from `domain/`, plus one `Schema.TaggedClass` per query and a schema for its result | `contract/index.ts` |
-| Transport `rpc` | `RpcGroup.make` from the contract schemas; handlers with `<Group>.toLayer` | `contract/Rpc.ts`, `infrastructure/RpcHandlers.ts` |
-| Transport `http-api` | `HttpApiGroup.make` with one endpoint per command and query, errors annotated with `HttpApiSchema.status`; handlers with `HttpApiBuilder.group` | `contract/HttpApi.ts`, `infrastructure/HttpApiHandlers.ts` |
-| Transport `server-fn` | one TanStack Start `createServerFn` per command and query, run through a `ManagedRuntime` of the application layer | the frontend's server files |
-| Transport `local` | the context runs in the browser. `browser.ts` builds its layer with repositories on `IndexedDb` from `@effect/platform-browser` or on `@effect/sql-sqlite-wasm`. Sync with a server, if any, is an external system, for example built on `effect/eventlog` | `browser.ts`, `infrastructure/Browser<Aggregate>Repository.ts` |
-| Transport `other` | the existing mechanism, with each handler calling one command or query service method | existing files |
-| Any other entry point | HTTP endpoints, CLI commands or queue consumers that only decode input and call a command or query service | existing files |
+| Transport `rpc` | `RpcGroup.make` from the contract schemas | `contract/Rpc.ts` |
+| Transport `http-api` | `HttpApiGroup.make` with one endpoint per command and query, errors annotated with `HttpApiSchema.status` | `contract/HttpApi.ts` |
+
+### Implementation
+
+| Model element | Shape | File |
+|---|---|---|
+| Repository | a layer for the storage in `repo.storage`, and a memory layer for tests | `infrastructure/` |
+| Command handling | `Context.Service` with one `Effect.fn` method per command: load, decide, save, publish | `application/<Aggregate>Commands.ts` |
+| Query | `Context.Service` with one method per query, reading from whatever stores the data | `application/<Context>Queries.ts` |
+| Event bus | `Context.Service` that publishes a context's events and lets others subscribe | `application/<Context>Events.ts` |
+| Policy, `timing: eventual` | a reaction that runs after its event and calls one command method | `application/policies.ts` |
+| Policy, `timing: same-transaction` | a second step in the same command method, in one storage transaction | `application/<Aggregate>Commands.ts` |
+| Policy, schedule trigger | a reaction that runs on its schedule and calls one command method | `application/policies.ts` |
+| External system | `Context.Service` port in `application/`, adapter layer in `infrastructure/` | `infrastructure/<External>.ts` |
+| Relation with `translation: acl` | the downstream context turns upstream events or calls into its own commands | `infrastructure/From<Upstream>.ts` |
+| Current time | `DateTime.now` or `Clock`, so tests control time | anywhere |
+| New ids | a small `Context.Service` per id kind, so tests fix the values | `application/` |
+| Transport handlers | one handler per command and query, each calling one service method | `infrastructure/RpcHandlers.ts` or `infrastructure/HttpApiHandlers.ts` |
+| Transport `local` | `browser.ts` builds the context's layer with repositories on the browser storage in `repo.storage` | `browser.ts` |
+| Transport `other` and other entry points | the existing mechanism, with each handler calling one service method | existing files |
 
 ## Code shapes
 
@@ -180,7 +191,7 @@ export class OrderCommands extends Context.Service<OrderCommands, {
   )
 
   static readonly layer = this.layerNoDeps.pipe(
-    Layer.provide([SqlOrderRepository.layer, OrderingEvents.layer])
+    Layer.provide([OrderRepositoryLive, OrderingEvents.layer])
   )
 
   static readonly layerTest = this.layerNoDeps.pipe(
@@ -189,7 +200,7 @@ export class OrderCommands extends Context.Service<OrderCommands, {
 }
 ```
 
-The SQL repository keeps its row shape in `infrastructure/`, as a `Model.Class` from `effect/schema`. It builds the basic operations with `SqlModel.makeRepository` from `effect/sql`, and converts between rows and aggregate states. Rows never leave `infrastructure/`.
+`OrderRepositoryLive` is the repository layer for the storage in `repo.storage`. Its storage shape and its conversion to aggregate states stay in `infrastructure/`. For SQL through `effect/sql`, that means a `Model.Class` row and `SqlModel.makeRepository`.
 
 Contract. It re-exports domain schemas and adds the query schemas. It imports only `effect` and files in `domain/`, so a browser bundle can include it.
 
@@ -260,7 +271,7 @@ Plan the steps in the order for `repo.mode`. Split a step per aggregate or per c
 1. Create the context folders and value objects. Point existing code at the new types.
 2. Add domain errors.
 3. Add each aggregate module with its tests. Nothing calls it yet.
-4. Add the repository interface, the SQL layer that wraps the existing queries, and the memory layer.
+4. Add the repository interface, the storage layer that wraps the existing data access, and the memory layer.
 5. Add each command service. Move callers to it one command at a time. Delete each old function once nothing calls it.
 6. Add the event buses and policies. Delete the hooks, listeners and callbacks they replace.
 7. Add query services and move read callers.

@@ -160,7 +160,7 @@ The example is an online shop, trimmed. Ids such as `ctx.shipping` and `cmd.prep
 - `repo.layout.contextRoot`: where each context lives, with `<context>` standing for its folder name, such as `src/<context>` or `packages/<context>/src`. Every `contexts.module` follows it.
 - `repo.storage`: the package the repositories store data with, such as `@effect/sql-pg`, `@effect/sql-sqlite-node` or `@effect/platform-browser` for IndexedDB. `none` when nothing is stored.
 - Greenfield mode: evidence is only `user:` and `decided:` entries, `replaces` lists are empty, and `persistence.current` is `"none"`.
-- `repo.frontend.kind`: `none`, `foldkit`, `tanstack-start-atom` or `other`. `path` is the frontend folder. `transport`: `rpc`, `http-api`, `server-fn`, `local` or `other`, the way the frontend reaches the domain today. Both are omitted for `none`.
+- `repo.frontend.kind`: `none`, `foldkit`, `tanstack-start-atom` or `other`. `path` is the frontend folder. `transport`: `rpc`, `http-api`, `local` or `other`, the way the frontend reaches the domain today. Both are omitted for `none`.
 - `glossary`: one entry per domain term. `retire` lists the code names that the refactor renames to `term`.
 - `subdomains.kind`: `core` (what sets the business apart), `supporting` (needed, specific to them) or `generic` (anyone's version would do).
 - `contexts.module`: the folder the context will own after the refactor.

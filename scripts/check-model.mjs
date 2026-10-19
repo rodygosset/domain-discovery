@@ -95,11 +95,9 @@ if (!frontend || !frontendKinds.includes(frontend.kind)) {
 } else if (frontend.kind !== "none") {
   if (!frontend.path) fail("repo.frontend", `"path" is required when "kind" is "${frontend.kind}"`)
   else if (!existsSync(resolve(root, frontend.path))) fail("repo.frontend", `folder not found: ${frontend.path}`)
-  const transports = ["rpc", "http-api", "server-fn", "local", "other"]
+  const transports = ["rpc", "http-api", "local", "other"]
   if (!transports.includes(frontend.transport)) {
     fail("repo.frontend", `"transport" must be one of ${transports.join(", ")}`)
-  } else if (frontend.transport === "server-fn" && frontend.kind === "foldkit") {
-    fail("repo.frontend", `"server-fn" only exists for TanStack Start`)
   }
 }
 for (const key of ["summary", "users", "value"]) {

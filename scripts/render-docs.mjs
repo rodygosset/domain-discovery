@@ -335,7 +335,6 @@ const transportFiles = {
 const exposeStep = {
   rpc: "Add an `Rpc.make` entry to `contract/Rpc.ts` and a handler to `infrastructure/RpcHandlers.ts`.",
   "http-api": "Add an endpoint to `contract/HttpApi.ts` and a handler to `infrastructure/HttpApiHandlers.ts`.",
-  "server-fn": "Add a server function that calls the new method through the `ManagedRuntime`.",
   local: "The frontend calls the new method directly, through the layer in `browser.ts`.",
   other: "Add a handler to the existing entry point. It calls the new method and nothing else.",
   none: "Add a handler to the entry point that serves it. It calls the new method and nothing else."
@@ -390,8 +389,8 @@ files.set("architecture.md", doc(
   "",
   "## Add a reaction to an event",
   "",
-  "1. Add a `Layer.effectDiscard` to `application/policies.ts`. It subscribes to the event bus and calls one command method.",
-  "2. If both changes must succeed or fail together, call the second command inside the first command's method, in `sql.withTransaction`, instead.",
+  "1. Add the reaction to `application/policies.ts`. It runs after its event and calls one command method.",
+  "2. If both changes must succeed or fail together, call the second command inside the first command's method, in one storage transaction, instead.",
   "3. Add the reaction to the context file.",
   "",
   "## Add a query",

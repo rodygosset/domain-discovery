@@ -35,9 +35,9 @@ The plan's last step deletes `domain-model.json`. The docs stay as the record of
 
 ## Supports
 
-- Effect v4 only, using its own modules: `Schema`, `Context.Service`, `Layer`, `effect/sql`, `effect/rpc`, `effect/http-api`, `effect/reactivity`.
+- Effect v4 only, using its own modules: `Schema`, `Context.Service`, `Layer`, `effect/rpc`, `effect/http-api`, `effect/reactivity`. Storage is whatever the project uses.
 - Frontends built with Foldkit, or with TanStack Start and Effect Atom.
-- Frontends that reach the server over RPC, HttpApi or server functions, or that keep data on the device.
+- Frontends that reach the server over RPC or HttpApi, or that keep data on the device.
 
 ## Requirements
 
